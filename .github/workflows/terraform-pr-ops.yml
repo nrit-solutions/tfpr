@@ -13,7 +13,7 @@ name: terraform-pr-ops
 #   - commenting "tfpr help" lists the commands
 #   - a submitted or dismissed review dispatches "review", which only
 #     refreshes the approval row on the head (#431)
-# Each run posts a fresh Digger-style report comment and completes the
+# Each run posts a fresh report comment and completes the
 # per-project plan/apply checks. tfpr apply respects the repo's required
 # reviews, and a "tfpr / merge-gate" check gates merge until applied
 # or no-op.
