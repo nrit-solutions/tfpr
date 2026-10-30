@@ -28,6 +28,10 @@ the release of that tag and checks every file against the `SHA256SUMS` file
 committed at that tag, not the release's copy. Tags are immutable. There is
 no moving major tag.
 
+Each release also carries `tfpr.spdx.json`, an SPDX software bill of
+materials for the `tfpr` binaries, and `tfpr.spdx.json.bundle`, its keyless
+cosign signature. The docs site shows how to verify it.
+
 The callers need the variables, secrets and environments listed at
 https://docs.nrit.cloud/setup/secrets-and-variables/, including the
 `TFPR_LICENSE` and `TFPR_ENTITLEMENT` variables that `tfpr apply` needs (see

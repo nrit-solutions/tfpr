@@ -61,12 +61,13 @@ auth=()
 [[ -n "${GH_TOKEN:-}" ]] && auth=(-H "Authorization: Bearer $GH_TOKEN")
 curl -sSfL --retry 3 ${auth[@]+"${auth[@]}"} -H "Accept: application/vnd.github.raw" -o "$tmp/SHA256SUMS" "$sums_url" \
   || die "cannot read SHA256SUMS from $repo at ${sha:0:12}, the commit of the $tag workflow"
-# Every listed file except the other architecture's binary.
+# Every listed file except the other architecture's binary, the license
+# notice and the SBOM with its signature, which are for humans.
 files=()
 while read -r sum name; do
   [[ "$name" =~ ^[A-Za-z0-9._-]+$ ]] || die "unexpected file name '$name' in the $tag checksums"
   [[ "$name" == tfpr_linux_* && "$name" != "$binary" ]] && continue
-  [[ "$name" == ENGINE-LICENSE.txt ]] && continue
+  [[ "$name" == ENGINE-LICENSE.txt || "$name" == tfpr.spdx.json* ]] && continue
   files+=("$name")
   printf '%s  %s\n' "$sum" "$name" >>"$tmp/wanted.sums"
 done <"$tmp/SHA256SUMS"
