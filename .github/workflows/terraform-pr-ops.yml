@@ -281,6 +281,8 @@ jobs:
 
   # The floor in resolve needs the base tree's reading map: which unit reads
   # which file, as the base tree's own terragrunt find reports it (#409).
+  # The same discovery lists the base units and the commit they came from,
+  # the only source of a removed unit's destroy plan row (#465).
   # That evaluates default-branch HCL, so it runs in its own job that never
   # touches PR code and holds nothing: no environment, no App token, no
   # id-token. It cannot share the discover job: PR code there could leave a
@@ -389,19 +391,24 @@ jobs:
           "$dir/terragrunt" --version | head -1
 
       # Plain terraform mode has no reading map; an empty one keeps the
-      # unattributed-path rule as it is.
+      # unattributed-path rule as it is. A plain-mode discovery failure only
+      # costs removed units their destroy plan, so it never fails the job.
       - name: Map the base tree's shared files
         if: steps.base.outcome == 'success'
         working-directory: ${{ runner.temp }}/base-tree
         env:
           CONFIG_FILE: ${{ env.CONFIG_FILE }}
           TFPR_READING_FILE: ${{ runner.temp }}/tfpr-floor/base-reading.json
+          TFPR_UNITS_FILE: ${{ runner.temp }}/tfpr-floor/base-units.json
+          TFPR_BASE_SHA_FILE: ${{ runner.temp }}/tfpr-floor/base-sha
         run: |
           mkdir -p "$(dirname "$TFPR_READING_FILE")"
+          git rev-parse HEAD >"$TFPR_BASE_SHA_FILE"
           if [ "$("$TFPR_BIN" discover --print-mode)" = terragrunt ]; then
             "$TFPR_BIN" discover >/dev/null
           else
             echo '{}' >"$TFPR_READING_FILE"
+            "$TFPR_BIN" discover >/dev/null || rm -f "$TFPR_UNITS_FILE"
           fi
 
       - name: Upload the reading map
@@ -410,7 +417,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: tfpr-floor
-          path: ${{ runner.temp }}/tfpr-floor/base-reading.json
+          path: ${{ runner.temp }}/tfpr-floor/
           retention-days: 1
 
   resolve:
@@ -474,10 +481,11 @@ jobs:
       # on a full run.
       full_projects: ${{ steps.discovery.outputs.full_projects }}
       full_unattributed: ${{ steps.discovery.outputs.full_unattributed }}
-      # Units on the base branch that this branch deleted. Reported, not blocked;
-      # removed_explains_tf tells the gate a zero selection was a removal, or a
-      # config-only edit that left the unit inventory unchanged, and not a unit
-      # discovery missed.
+      # Units on the base branch that this branch deleted. Each one the
+      # base-tree inventory knows is also a destroy plan row in projects
+      # (#465), never blocking on its plan. removed_explains_tf tells the gate
+      # a zero selection was a removal, or a config-only edit that left the
+      # unit inventory unchanged, and not a unit discovery missed.
       removed_units: ${{ steps.ctx.outputs.removed_units }}
       removed_check: ${{ steps.ctx.outputs.removed_check }}
       removed_explains_tf: ${{ steps.ctx.outputs.removed_explains_tf }}
@@ -665,6 +673,8 @@ jobs:
         env:
           TFPR_INVENTORY_FILE: ${{ runner.temp }}/tfpr-discovery/inventory.json
           TFPR_BASE_READING_FILE: ${{ runner.temp }}/tfpr-floor/base-reading.json
+          TFPR_BASE_UNITS_FILE: ${{ runner.temp }}/tfpr-floor/base-units.json
+          TFPR_BASE_SHA_FILE: ${{ runner.temp }}/tfpr-floor/base-sha
           HEAD_SHA: ${{ steps.pr.outputs.head_sha }}
           BASE_REF: ${{ steps.pr.outputs.base_ref }}
           CHANGED_FILES: ${{ steps.changed.outputs.files }}
@@ -675,11 +685,12 @@ jobs:
         run: '"$TFPR_BIN" check-discovery'
 
       # A status description has no room to say which units went, or what the
-      # reader has to do by hand about it, so put that on the PR.
+      # reader has to do by hand about it, so put that on the PR. Only units
+      # with no destroy plan row get this report; the rest get their plan's.
       - name: Report removed units
         if: >-
           steps.auth.outputs.run == 'true' &&
-          steps.discovery.outputs.removed_units != ''
+          steps.discovery.outputs.removed_report == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -1043,8 +1054,8 @@ jobs:
           | --- | --- |
           | `tfpr plan` | Plan changed projects |
           | `tfpr plan -p <label>` | Plan one project and its dependents (label, name, or dir) |
-          | `tfpr apply` | Apply changed projects in dependency order (requires the repo's required reviews) |
-          | `tfpr apply -p <label>` | Apply exactly one project, no dependents |
+          | `tfpr apply` | Apply changed projects in dependency order (requires the repo's required reviews); never destroys a unit this PR deletes |
+          | `tfpr apply -p <label>` | Apply exactly one project, no dependents; for a unit this PR deletes, destroy it |
           | `tfpr apply --force` | Apply even when the plan changed since it was reviewed |
           | `tfpr unlock` | Force-release this PR's unit locks |
           | `tfpr help` | Show this message |
@@ -1341,6 +1352,8 @@ jobs:
           INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}
           # tfpr apply --force: apply even when the plan differs from the reviewed one.
           TFPR_APPLY_FORCE: ${{ needs.resolve.outputs.force }}
+          # Only a unit named with -p is destroyed; a plain tfpr apply keeps removed units (#465).
+          PROJECT_FILTER: ${{ needs.resolve.outputs.project_filter }}
           TFPR_TRIGGER_EVENT: ${{ github.event_name == 'issue_comment' && 'comment' || 'manual' }}
           TFPR_TRIGGER_COMMAND: ${{ format('tfpr apply{0}{1}', needs.resolve.outputs.project_filter != '' && format(' -p {0}', needs.resolve.outputs.project_filter) || '', needs.resolve.outputs.force == 'true' && ' --force' || '') }}
           TFPR_TRIGGER_ACTOR: ${{ github.actor }}

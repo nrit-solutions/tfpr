@@ -273,6 +273,8 @@ jobs:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           STEPS_JSON: ${{ toJson(matrix.project.steps) }}
           EXTRA_ENV_JSON: ${{ toJson(matrix.project.extra_env) }}
+          # Set only on a removed unit's row: plan its destroy from the base commit (#465).
+          REMOVAL_JSON: ${{ toJson(matrix.project.removal) }}
           INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}
           INIT_ARGS: ${{ vars.TFPR_INIT_ARGS }}
           # Stamps the reviewed-plan summary the report embeds for the apply
