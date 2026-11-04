@@ -505,6 +505,8 @@ jobs:
       apply_allowed: ${{ steps.apply_gate.outputs.apply_allowed }}
       # Where the revocation list in the tfpr-license artifact came from (#350).
       license_list_source: ${{ steps.license.outputs.list_source }}
+      # Differences between the base branch callers and this version's examples (#90).
+      caller_drift: ${{ steps.callers.outputs.drift }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -622,6 +624,20 @@ jobs:
           echo "head_ref=$head" >>"$GITHUB_OUTPUT"
           echo "base_ref=$base" >>"$GITHUB_OUTPUT"
           echo "head_sha=$sha" >>"$GITHUB_OUTPUT"
+
+      # Warn only: the base branch callers against this version's examples (#90).
+      # The engine repository's own callers are not copies of the examples.
+      - name: Check the callers
+        id: callers
+        if: >-
+          steps.auth.outputs.run == 'true' &&
+          steps.parse.outputs.command != 'review' &&
+          steps.pr.outputs.base_ref != '' &&
+          job.workflow_repository != github.repository
+        continue-on-error: true
+        env:
+          BASE_REF: ${{ steps.pr.outputs.base_ref }}
+        run: '"$TFPR_BIN" check-callers'
 
       - name: Compute changed files
         id: changed
@@ -1633,6 +1649,7 @@ jobs:
           RESOLVE_RESULT: ${{ needs.resolve.result }}
           REFUSAL: ${{ needs.resolve.outputs.refusal }}
           REFUSAL_DETAIL: ${{ needs.resolve.outputs.refusal_detail }}
+          CALLER_DRIFT: ${{ needs.resolve.outputs.caller_drift }}
           RESULT_DIR: ${{ runner.temp }}/tfpr-gate
           RUN_ID: ${{ needs.resolve.outputs.check_run_id || github.run_id }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
