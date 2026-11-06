@@ -1416,7 +1416,10 @@ jobs:
   unlock:
     name: unlock
     needs: resolve
+    # always(): floor is skipped on an unlock comment, and a skipped ancestor would skip this job too.
     if: >-
+      always() &&
+      needs.resolve.result == 'success' &&
       needs.resolve.outputs.run == 'true' &&
       needs.resolve.outputs.command == 'unlock' &&
       vars.TFPR_DISABLE_LOCKS != 'true' &&
