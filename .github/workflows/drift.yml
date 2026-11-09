@@ -85,7 +85,7 @@ jobs:
           TFPR_RUNTIME_REF: ${{ job.workflow_ref }}
           TFPR_RUNTIME_SHA: ${{ job.workflow_sha }}
         run: |
-          curl -sSfL --retry 3 -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github.raw" \
+          curl -sSfL --retry 5 --retry-delay 10 --retry-max-time 120 -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github.raw" \
             -o "$RUNNER_TEMP/install-runtime.sh" \
             "${GITHUB_API_URL:-https://api.github.com}/repos/$TFPR_RUNTIME_REPO/contents/install-runtime.sh?ref=$TFPR_RUNTIME_SHA"
           bash "$RUNNER_TEMP/install-runtime.sh"
@@ -208,7 +208,7 @@ jobs:
           TFPR_RUNTIME_REF: ${{ job.workflow_ref }}
           TFPR_RUNTIME_SHA: ${{ job.workflow_sha }}
         run: |
-          curl -sSfL --retry 3 -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github.raw" \
+          curl -sSfL --retry 5 --retry-delay 10 --retry-max-time 120 -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github.raw" \
             -o "$RUNNER_TEMP/install-runtime.sh" \
             "${GITHUB_API_URL:-https://api.github.com}/repos/$TFPR_RUNTIME_REPO/contents/install-runtime.sh?ref=$TFPR_RUNTIME_SHA"
           bash "$RUNNER_TEMP/install-runtime.sh"
@@ -288,7 +288,7 @@ jobs:
           TFPR_RUNTIME_REF: ${{ job.workflow_ref }}
           TFPR_RUNTIME_SHA: ${{ job.workflow_sha }}
         run: |
-          curl -sSfL --retry 3 -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github.raw" \
+          curl -sSfL --retry 5 --retry-delay 10 --retry-max-time 120 -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github.raw" \
             -o "$RUNNER_TEMP/install-runtime.sh" \
             "${GITHUB_API_URL:-https://api.github.com}/repos/$TFPR_RUNTIME_REPO/contents/install-runtime.sh?ref=$TFPR_RUNTIME_SHA"
           bash "$RUNNER_TEMP/install-runtime.sh"
@@ -451,7 +451,7 @@ jobs:
           TFPR_RUNTIME_REF: ${{ job.workflow_ref }}
           TFPR_RUNTIME_SHA: ${{ job.workflow_sha }}
         run: |
-          curl -sSfL --retry 3 -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github.raw" \
+          curl -sSfL --retry 5 --retry-delay 10 --retry-max-time 120 -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github.raw" \
             -o "$RUNNER_TEMP/install-runtime.sh" \
             "${GITHUB_API_URL:-https://api.github.com}/repos/$TFPR_RUNTIME_REPO/contents/install-runtime.sh?ref=$TFPR_RUNTIME_SHA"
           bash "$RUNNER_TEMP/install-runtime.sh"

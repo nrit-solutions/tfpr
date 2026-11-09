@@ -53,13 +53,13 @@ tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 
 fetch() {
-  curl -sSfL --retry 3 -o "$tmp/$1" "$base/$1" || die "cannot download $1 from the $tag release of $repo"
+  curl -sSfL --retry 5 --retry-delay 10 --retry-max-time 120 -o "$tmp/$1" "$base/$1" || die "cannot download $1 from the $tag release of $repo"
 }
 
 sums_url="${TFPR_RUNTIME_SUMS_URL:-${GITHUB_API_URL:-https://api.github.com}/repos/$repo/contents/SHA256SUMS?ref=$sha}"
 auth=()
 [[ -n "${GH_TOKEN:-}" ]] && auth=(-H "Authorization: Bearer $GH_TOKEN")
-curl -sSfL --retry 3 ${auth[@]+"${auth[@]}"} -H "Accept: application/vnd.github.raw" -o "$tmp/SHA256SUMS" "$sums_url" \
+curl -sSfL --retry 5 --retry-delay 10 --retry-max-time 120 ${auth[@]+"${auth[@]}"} -H "Accept: application/vnd.github.raw" -o "$tmp/SHA256SUMS" "$sums_url" \
   || die "cannot read SHA256SUMS from $repo at ${sha:0:12}, the commit of the $tag workflow"
 # Every listed file except the other architecture's binary, the license
 # notice and the SBOM with its signature, which are for humans.

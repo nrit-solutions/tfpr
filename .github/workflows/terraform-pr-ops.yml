@@ -124,7 +124,7 @@ jobs:
           TFPR_RUNTIME_REF: ${{ job.workflow_ref }}
           TFPR_RUNTIME_SHA: ${{ job.workflow_sha }}
         run: |
-          curl -sSfL --retry 3 -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github.raw" \
+          curl -sSfL --retry 5 --retry-delay 10 --retry-max-time 120 -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github.raw" \
             -o "$RUNNER_TEMP/install-runtime.sh" \
             "${GITHUB_API_URL:-https://api.github.com}/repos/$TFPR_RUNTIME_REPO/contents/install-runtime.sh?ref=$TFPR_RUNTIME_SHA"
           bash "$RUNNER_TEMP/install-runtime.sh"
@@ -203,8 +203,8 @@ jobs:
           dir="$RUNNER_TEMP/tfpr-tools"
           mkdir -p "$dir/dl"
           base="https://github.com/gruntwork-io/terragrunt/releases/download/v${TERRAGRUNT_VERSION}"
-          curl -sSfL --retry 3 -o "$dir/dl/$binary" "$base/$binary"
-          curl -sSfL --retry 3 -o "$dir/dl/SHA256SUMS" "$base/SHA256SUMS"
+          curl -sSfL --retry 5 --retry-delay 10 --retry-max-time 120 -o "$dir/dl/$binary" "$base/$binary"
+          curl -sSfL --retry 5 --retry-delay 10 --retry-max-time 120 -o "$dir/dl/SHA256SUMS" "$base/SHA256SUMS"
           (cd "$dir/dl" && grep " ${binary}\$" SHA256SUMS | sha256sum -c -)
           install -m 0755 "$dir/dl/$binary" "$dir/terragrunt"
           echo "$dir" >>"$GITHUB_PATH"
@@ -318,7 +318,7 @@ jobs:
           TFPR_RUNTIME_REF: ${{ job.workflow_ref }}
           TFPR_RUNTIME_SHA: ${{ job.workflow_sha }}
         run: |
-          curl -sSfL --retry 3 -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github.raw" \
+          curl -sSfL --retry 5 --retry-delay 10 --retry-max-time 120 -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github.raw" \
             -o "$RUNNER_TEMP/install-runtime.sh" \
             "${GITHUB_API_URL:-https://api.github.com}/repos/$TFPR_RUNTIME_REPO/contents/install-runtime.sh?ref=$TFPR_RUNTIME_SHA"
           bash "$RUNNER_TEMP/install-runtime.sh"
@@ -383,8 +383,8 @@ jobs:
           dir="$RUNNER_TEMP/tfpr-tools"
           mkdir -p "$dir/dl"
           base="https://github.com/gruntwork-io/terragrunt/releases/download/v${TERRAGRUNT_VERSION}"
-          curl -sSfL --retry 3 -o "$dir/dl/$binary" "$base/$binary"
-          curl -sSfL --retry 3 -o "$dir/dl/SHA256SUMS" "$base/SHA256SUMS"
+          curl -sSfL --retry 5 --retry-delay 10 --retry-max-time 120 -o "$dir/dl/$binary" "$base/$binary"
+          curl -sSfL --retry 5 --retry-delay 10 --retry-max-time 120 -o "$dir/dl/SHA256SUMS" "$base/SHA256SUMS"
           (cd "$dir/dl" && grep " ${binary}\$" SHA256SUMS | sha256sum -c -)
           install -m 0755 "$dir/dl/$binary" "$dir/terragrunt"
           echo "$dir" >>"$GITHUB_PATH"
@@ -524,7 +524,7 @@ jobs:
           TFPR_RUNTIME_REF: ${{ job.workflow_ref }}
           TFPR_RUNTIME_SHA: ${{ job.workflow_sha }}
         run: |
-          curl -sSfL --retry 3 -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github.raw" \
+          curl -sSfL --retry 5 --retry-delay 10 --retry-max-time 120 -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github.raw" \
             -o "$RUNNER_TEMP/install-runtime.sh" \
             "${GITHUB_API_URL:-https://api.github.com}/repos/$TFPR_RUNTIME_REPO/contents/install-runtime.sh?ref=$TFPR_RUNTIME_SHA"
           bash "$RUNNER_TEMP/install-runtime.sh"
@@ -1192,7 +1192,7 @@ jobs:
           TFPR_RUNTIME_REF: ${{ job.workflow_ref }}
           TFPR_RUNTIME_SHA: ${{ job.workflow_sha }}
         run: |
-          curl -sSfL --retry 3 -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github.raw" \
+          curl -sSfL --retry 5 --retry-delay 10 --retry-max-time 120 -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github.raw" \
             -o "$RUNNER_TEMP/install-runtime.sh" \
             "${GITHUB_API_URL:-https://api.github.com}/repos/$TFPR_RUNTIME_REPO/contents/install-runtime.sh?ref=$TFPR_RUNTIME_SHA"
           bash "$RUNNER_TEMP/install-runtime.sh"
@@ -1454,7 +1454,7 @@ jobs:
           TFPR_RUNTIME_REF: ${{ job.workflow_ref }}
           TFPR_RUNTIME_SHA: ${{ job.workflow_sha }}
         run: |
-          curl -sSfL --retry 3 -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github.raw" \
+          curl -sSfL --retry 5 --retry-delay 10 --retry-max-time 120 -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github.raw" \
             -o "$RUNNER_TEMP/install-runtime.sh" \
             "${GITHUB_API_URL:-https://api.github.com}/repos/$TFPR_RUNTIME_REPO/contents/install-runtime.sh?ref=$TFPR_RUNTIME_SHA"
           bash "$RUNNER_TEMP/install-runtime.sh"
@@ -1546,7 +1546,7 @@ jobs:
           TFPR_RUNTIME_REF: ${{ job.workflow_ref }}
           TFPR_RUNTIME_SHA: ${{ job.workflow_sha }}
         run: |
-          curl -sSfL --retry 3 -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github.raw" \
+          curl -sSfL --retry 5 --retry-delay 10 --retry-max-time 120 -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github.raw" \
             -o "$RUNNER_TEMP/install-runtime.sh" \
             "${GITHUB_API_URL:-https://api.github.com}/repos/$TFPR_RUNTIME_REPO/contents/install-runtime.sh?ref=$TFPR_RUNTIME_SHA"
           bash "$RUNNER_TEMP/install-runtime.sh"
@@ -1663,6 +1663,20 @@ jobs:
       # there (runner offline, environment approval denied, canceled). Complete
       # those as canceled; a check that never completes blocks merge forever.
       # Best effort, and runs even when the gate status above failed.
+      # Without the binary nothing below can close those checks (#482).
+      - name: Retry the engine runtime install
+        if: always() && job.workflow_repository != github.repository && env.TFPR_BIN == ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TFPR_RUNTIME_REPO: ${{ job.workflow_repository }}
+          TFPR_RUNTIME_REF: ${{ job.workflow_ref }}
+          TFPR_RUNTIME_SHA: ${{ job.workflow_sha }}
+        run: |
+          curl -sSfL --retry 5 --retry-delay 10 --retry-max-time 120 -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github.raw" \
+            -o "$RUNNER_TEMP/install-runtime.sh" \
+            "${GITHUB_API_URL:-https://api.github.com}/repos/$TFPR_RUNTIME_REPO/contents/install-runtime.sh?ref=$TFPR_RUNTIME_SHA"
+          bash "$RUNNER_TEMP/install-runtime.sh"
+
       - name: Cancel leftover PR checks
         if: always()
         env:
