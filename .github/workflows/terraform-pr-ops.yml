@@ -1309,6 +1309,8 @@ jobs:
           TFPR_LOCK_STORAGE_ACCOUNT: ${{ vars.TFPR_LOCK_STORAGE_ACCOUNT }}
           TFPR_LOCK_TABLE: ${{ vars.TFPR_LOCK_TABLE }}
           TFPR_DISABLE_LOCKS: ${{ vars.TFPR_DISABLE_LOCKS }}
+          # Units with no dependency between them apply side by side; 1 turns it off (#505).
+          TFPR_APPLY_PARALLELISM: ${{ vars.TFPR_APPLY_PARALLELISM }}
         # exec: no shell is left holding the tokens for PR code to read (#395).
         run: TF_PLUGIN_CACHE_DIR="$HOME/.terraform.d/plugin-cache" exec "$TFPR_BIN" apply-ordered
 
