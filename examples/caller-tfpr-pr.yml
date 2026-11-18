@@ -30,7 +30,6 @@ jobs:
   # runs and no report lands on a PR that fails its own hooks; merge stays
   # blocked because the required merge gate is never created.
   pre-commit:
-    if: github.event.repository.is_template != true
     runs-on: ubuntu-latest
     steps:
       # Full history: the hooks run on the diff to the PR base, and the
@@ -52,4 +51,7 @@ jobs:
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
 
-      - uses: nrit-solutions/tfpr/.github/actions/dispatch@v12.9.1 # x-release-please-version
+      # A template repository holds no infrastructure and no engine credentials,
+      # so it lints its own pull requests and never dispatches.
+      - if: github.event.repository.is_template != true
+        uses: nrit-solutions/tfpr/.github/actions/dispatch@v12.9.2 # x-release-please-version
