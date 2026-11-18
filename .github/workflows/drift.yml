@@ -343,13 +343,15 @@ jobs:
       # plugin cache, keyed on the lock files. A unit is served from it only
       # when its lock file carries the h1 hash for this platform (terraform
       # providers lock -platform=linux_amd64); otherwise Terraform downloads
-      # from the registry and fills the cache for next time (#188).
+      # from the registry (#188). Restore only: the ops workflow's
+      # provider-cache job saves, off the path to the gate (#504).
       # A path that is the same on every runner instance: actions/cache hashes
       # the path into the cache version, and runner.temp carries the instance
       # name on ephemeral self-hosted runners, so a cache saved there was
       # never found again (#284).
       - name: Provider cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        id: providers
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.terraform.d/plugin-cache
           key: tfpr-providers-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/.terraform.lock.hcl') }}

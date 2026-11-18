@@ -1245,13 +1245,15 @@ jobs:
       # plugin cache, keyed on the lock files. A unit is served from it only
       # when its lock file carries the h1 hash for this platform (terraform
       # providers lock -platform=linux_amd64); otherwise Terraform downloads
-      # from the registry and fills the cache for next time (#188).
+      # from the registry (#188). Restore only: the ops workflow's
+      # provider-cache job saves, off the path to the gate (#504).
       # A path that is the same on every runner instance: actions/cache hashes
       # the path into the cache version, and runner.temp carries the instance
       # name on ephemeral self-hosted runners, so a cache saved there was
       # never found again (#284).
       - name: Provider cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        id: providers
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.terraform.d/plugin-cache
           key: tfpr-providers-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/.terraform.lock.hcl') }}
@@ -1336,6 +1338,80 @@ jobs:
           HEAD_SHA: ${{ needs.resolve.outputs.head_sha }}
           VERIFY_HEAD_PHASE: post-apply
         run: '"$TFPR_BIN" verify-head'
+
+  # Saves the provider cache when the lock files changed. Its own job, which
+  # the gate does not wait for: the save used to run at the end of every plan
+  # job, in front of the gate, and each matrix leg compressed the same archive
+  # for one winner (#504). It fills an empty cache from the lock files alone,
+  # so the archive holds exactly the locked providers and no project code
+  # runs before the save. No environment and no credentials.
+  provider-cache:
+    needs: [resolve, plan]
+    if: >-
+      !cancelled() &&
+      needs.plan.outputs.provider_cache_key != '' &&
+      needs.plan.outputs.provider_cache_hit != 'true'
+    runs-on: ${{ vars.RUNNER_LABEL || 'ubuntu-latest' }}
+    continue-on-error: true
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.resolve.outputs.head_sha }}
+          persist-credentials: false
+
+      - name: Install the engine runtime
+        if: job.workflow_repository != github.repository
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TFPR_RUNTIME_REPO: ${{ job.workflow_repository }}
+          TFPR_RUNTIME_REF: ${{ job.workflow_ref }}
+          TFPR_RUNTIME_SHA: ${{ job.workflow_sha }}
+        run: |
+          curl -sSfL --retry 5 --retry-delay 10 --retry-max-time 120 -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github.raw" \
+            -o "$RUNNER_TEMP/install-runtime.sh" \
+            "${GITHUB_API_URL:-https://api.github.com}/repos/$TFPR_RUNTIME_REPO/contents/install-runtime.sh?ref=$TFPR_RUNTIME_SHA"
+          bash "$RUNNER_TEMP/install-runtime.sh"
+
+      - name: Set up Go
+        if: job.workflow_repository == github.repository
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+
+      - name: Build tfpr
+        if: job.workflow_repository == github.repository
+        run: |
+          go build -o "$RUNNER_TEMP/tfpr" ./cmd/tfpr
+          echo "TFPR_BIN=$RUNNER_TEMP/tfpr" >>"$GITHUB_ENV"
+
+      - name: Setup tools
+        if: job.workflow_repository == github.repository
+        uses: ./.github/actions/setup-tools
+        with:
+          tools: terraform
+          terraform_version: ${{ env.FALLBACK_TERRAFORM_VERSION }}
+
+      - name: Setup tools (reusable)
+        if: job.workflow_repository != github.repository
+        uses: ./.tfpr-engine/.github/actions/setup-tools
+        with:
+          tools: terraform
+          terraform_version: ${{ env.FALLBACK_TERRAFORM_VERSION }}
+
+      # A failed install fails the step, so a partial cache is never saved.
+      - name: Install the locked providers
+        id: warm
+        run: TF_PLUGIN_CACHE_DIR="$HOME/.terraform.d/plugin-cache" "$TFPR_BIN" warm-providers
+
+      - name: Save the provider cache
+        if: steps.warm.outputs.lock_files != '0'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.terraform.d/plugin-cache
+          key: ${{ needs.plan.outputs.provider_cache_key }}
 
   # Release every cross-PR unit lock the PR holds. Two triggers land here: the
   # PR closing (merged or not; automatic) and an explicit tfpr unlock comment (to
