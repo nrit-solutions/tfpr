@@ -4,15 +4,17 @@
 # pin: the dispatch action knows its own ref. tfpr-review.yml refreshes
 # the approval row when a review lands.
 #
-# The pre-commit job is consumer-owned convention, not engine contract: it
-# runs the hooks from this repository's own .pre-commit-config.yaml, and you
-# may extend, weaken, or remove the gate per repo. The engine-enforced gates
-# (authorization, approval, merge gate) do not depend on it.
+# The lint steps are consumer-owned convention, not engine contract: they
+# run the hooks from this repository's own .pre-commit-config.yaml, and you
+# may extend, weaken, or remove them per repo. The engine-enforced gates
+# (authorization, approval, merge gate) do not depend on them. Keep the
+# dispatch as the last step of the same job: a job of its own waits for a
+# second runner on every push (#506).
 name: tfpr
 
 # The closed event lives in tfpr-unlock.yml: splitting it out keeps a
-# merged PR's checks list free of a skipped pre-commit row and a duplicate
-# dispatch row from the unlock run (#206).
+# merged PR's checks list free of a second pre-commit row from the unlock
+# run (#206).
 on:
   pull_request:
     types: [opened, synchronize, reopened]
@@ -24,9 +26,9 @@ permissions:
   actions: write         # dispatch the ops workflow
 
 jobs:
-  # First and gating: a failed lint stops dispatch, so no plan runs and no
-  # report lands on a PR that fails its own hooks; merge stays blocked
-  # because the required merge gate is never created.
+  # The hooks gate the dispatch step: a failed lint stops it, so no plan
+  # runs and no report lands on a PR that fails its own hooks; merge stays
+  # blocked because the required merge gate is never created.
   pre-commit:
     if: github.event.repository.is_template != true
     runs-on: ubuntu-latest
@@ -37,7 +39,7 @@ jobs:
         with:
           fetch-depth: 0
       # Without the cache every push rebuilds every hook environment from
-      # scratch, on the critical path in front of dispatch. Keyed on the
+      # scratch, on the critical path in front of the dispatch. Keyed on the
       # config, so a hook bump invalidates cleanly.
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
@@ -50,9 +52,4 @@ jobs:
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
 
-  dispatch:
-    needs: pre-commit
-    if: github.event.repository.is_template != true
-    runs-on: ubuntu-latest
-    steps:
-      - uses: nrit-solutions/tfpr/.github/actions/dispatch@v12.9.0 # x-release-please-version
+      - uses: nrit-solutions/tfpr/.github/actions/dispatch@v12.9.1 # x-release-please-version
